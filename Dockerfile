@@ -14,6 +14,6 @@ copy ./pyproject.toml ./poetry.lock* /app/
 arg INSTALL_DEV=false
 run sh -c "if [ $INSTALL_DEV == 'true' ] ; then poetry install --no-root ; else poetry install --no-root --no-dev ; fi"
 
-copy cscan cscan
+copy imagenator imagenator
 
 entrypoint ["poetry", "run", "bot"]

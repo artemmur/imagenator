@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "cscan"
+name = "imagenator"
 version = "0.1.0"
 description = "Container registry vulnerability scanner"
 authors = ["Your Name <you@example.com>"]
@@ -17,7 +17,7 @@ isort = "^5.10.1"
 flake8 = "^4.0.1"
 
 [tool.poetry.scripts]
-bot = "cscan.__main__:main"
+bot = "imagenator.__main__:main"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
