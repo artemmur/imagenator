@@ -1,3 +1,5 @@
+import json
+
 from . import bot, detector, image
 from .settings import CHAT_ID
 
@@ -14,21 +16,18 @@ class App:
         self.detector = detector
         self.image = image
 
-    def start(self) -> None:
-        """Start pooling vk teams api"""
-        self.bot.start_polling()
-        self.bot.idle()
-
     def scan(self, image: str) -> None:
         """Scan image for vulnerabilities and publish result"""
         if not image:
             return
 
         vulnerabilities: list[detector.Vulnerability] = self.detector.check(
-                self.image.decompose(image)
-            )
+            self.image.decompose(image)
+        )
         if len(vulnerabilities) == 0:
-            self.bot.send(CHAT_ID, f"Vulnerabilities wasn't detected in {image} 💮")
+            self.bot.send(
+                CHAT_ID, f"*Vulnerabilities wasn't detected in image  💮*\n```{image}```"
+            )
             return
 
         message: str = f"{image} is vulnerable ⛔️\n\n"
@@ -36,3 +35,17 @@ class App:
             message += str(vulnerability)
         self.bot.send(CHAT_ID, message)
         return
+
+
+async def run(app: App, filename: str) -> None:
+    """Start shedule job"""
+    while True:
+        data: dict = dict()
+        with open(filename, "r") as f:
+            data = json.load(f)
+
+        for image in data.get("images", []):
+            try:
+                app.scan(image)
+            except:
+                print(f"error while scanning {image}")

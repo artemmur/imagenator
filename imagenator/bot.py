@@ -11,17 +11,12 @@ def encode_message(message: str) -> str:
 class Bot:
     """VK Teams api wrapper"""
 
-    def __init__(self, token: str) -> None:
-        self.token: str = token
-        self.base_api_url: str = "https://api.internal.myteam.mail.ru/bot/v1"
-        self.send_text_url: str = f"{self.base_api_url}/messages/sendText"
-
-    def send(self, to: str, message: str) -> None:
+    def send(self, to, message):
         """Send message to VK teams chat"""
-        params: dict = {
+        params = {
             "token": self.token,
             "chatId": to,
-            "text": encode_message(message),
+            "text": message,
             "parseMode": "MarkdownV2",
         }
         r: requests.Response = requests.get(self.send_text_url, params=params)
