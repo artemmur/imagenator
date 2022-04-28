@@ -1,7 +1,8 @@
 import json
+import time
 
 from . import bot, detector, image
-from .settings import CHAT_ID
+import settings
 
 
 class ScanException(BaseException):
@@ -13,8 +14,14 @@ class App:
         self, bot: bot.Bot, image: image.Image, detector: detector.Detector
     ) -> None:
         self.bot = bot
-        self.detector = detector
         self.image = image
+        self.detector = detector
+
+    def send(self, message: str) -> None:
+        """Send message to chat"""
+        if not message:
+            return
+        self.bot.send(settings.CHAT_ID, message)
 
     def scan(self, image: str) -> None:
         """Scan image for vulnerabilities and publish result"""
@@ -24,20 +31,25 @@ class App:
         vulnerabilities: list[detector.Vulnerability] = self.detector.check(
             self.image.decompose(image)
         )
+
         if len(vulnerabilities) == 0:
-            self.bot.send(
-                CHAT_ID, f"*Vulnerabilities wasn't detected in image  💮*\n```{image}```"
-            )
+            self.send(f"*Vulnerabilities wasn't detected ✅*```{image}```\n")
             return
 
-        message: str = f"{image} is vulnerable ⛔️\n\n"
+        message: str = f"*Image is vulnerable ❌*\n```{image}```\n"
         for vulnerability in vulnerabilities:
-            message += str(vulnerability)
-        self.bot.send(CHAT_ID, message)
+            message += (
+                f"*{vulnerability.package}:*\n"
+                f"- `{vulnerability.version}`\n"
+                f"- `{vulnerability.type}`\n"
+                f"- [{vulnerability.name}]({bot.encode(vulnerability.link)})\n"
+                f"- {bot.encode(vulnerability.description)}\n"
+            )
+        self.send(message)
         return
 
 
-async def run(app: App, filename: str) -> None:
+async def run(app: App, filename: str, secs: float) -> None:
     """Start shedule job"""
     while True:
         data: dict = dict()
@@ -49,3 +61,4 @@ async def run(app: App, filename: str) -> None:
                 app.scan(image)
             except:
                 print(f"error while scanning {image}")
+        time.sleep(secs)
