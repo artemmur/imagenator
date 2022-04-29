@@ -17,7 +17,7 @@ api: FastAPI = FastAPI()
 
 
 @api.on_event("startup")
-async def server() -> None:
+async def startup() -> None:
     """Initialize server tasks for running on event loop"""
     asyncio.create_task(
         run(
