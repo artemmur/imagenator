@@ -53,7 +53,7 @@ def parse(result: dict) -> list[Vulnerability]:
 
 
 class Detector:
-    def check(self, sbom: str) -> list[Vulnerability]:
+    def check(self, sbom: bytes) -> list[Vulnerability]:
         """Call Grype for permorme vulnerability check"""
         if not sbom:
             raise InvalidSBOMException

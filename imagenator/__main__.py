@@ -1,13 +1,33 @@
+import asyncio
+import os
+
 import uvicorn
 
-from .api import server
-from .app import App
-from .bot import Bot
-from .detector import Detector
-from .image import Image
-from .settings import BOT_TOKEN
+from . import api, app, imagenator
+
+
+async def server() -> None:
+    """Initialize server tasks for running on event loop"""
+    tasks: list[asyncio.Task] = [
+        asyncio.create_task(
+            app.run(
+                app=imagenator,
+                filename=os.environ.get("APP_CONF", "config.json"),
+                mins=float(os.environ.get("APP_DURATION", 60)),
+            )
+        ),
+        asyncio.create_task(
+            uvicorn.run(
+                api,
+                host=os.environ.get("APP_HOST", "0.0.0.0"),
+                port=os.environ.get("APP_PORT", 80),
+            )
+        ),
+    ]
+    await asyncio.wait(tasks)
 
 
 def main():
-    app: App = App(bot=Bot(token=BOT_TOKEN), image=Image(), detector=Detector())
-    uvicorn.run(server, host="0.0.0.0", port=8000)
+    loop: asyncio.AbstractEventLoop = asyncio.get_event_loop()
+    loop.run_until_complete(server())
+    loop.close()

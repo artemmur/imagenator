@@ -1,8 +1,10 @@
 import json
 import time
 
-from . import bot, detector, image
-import settings
+from .bot import Bot, encode
+from .detector import Detector, Vulnerability
+from .image import Image
+from .settings import CHAT_ID
 
 
 class ScanException(BaseException):
@@ -10,9 +12,7 @@ class ScanException(BaseException):
 
 
 class App:
-    def __init__(
-        self, bot: bot.Bot, image: image.Image, detector: detector.Detector
-    ) -> None:
+    def __init__(self, bot: Bot, image: Image, detector: Detector) -> None:
         self.bot = bot
         self.image = image
         self.detector = detector
@@ -21,14 +21,14 @@ class App:
         """Send message to chat"""
         if not message:
             return
-        self.bot.send(settings.CHAT_ID, message)
+        self.bot.send(CHAT_ID, message)
 
     def scan(self, image: str) -> None:
         """Scan image for vulnerabilities and publish result"""
         if not image:
             return
 
-        vulnerabilities: list[detector.Vulnerability] = self.detector.check(
+        vulnerabilities: list[Vulnerability] = self.detector.check(
             self.image.decompose(image)
         )
 
@@ -42,16 +42,18 @@ class App:
                 f"*{vulnerability.package}:*\n"
                 f"- `{vulnerability.version}`\n"
                 f"- `{vulnerability.type}`\n"
-                f"- [{vulnerability.name}]({bot.encode(vulnerability.link)})\n"
-                f"- {bot.encode(vulnerability.description)}\n"
+                f"- [{vulnerability.name}]({encode(vulnerability.link)})\n"
+                f"- {encode(vulnerability.description)}\n"
             )
         self.send(message)
         return
 
 
-async def run(app: App, filename: str, secs: float) -> None:
+async def run(app: App, filename: str, mins: float) -> None:
     """Start shedule job"""
     while True:
+        print("Start cron scanning")
+
         data: dict = dict()
         with open(filename, "r") as f:
             data = json.load(f)
@@ -60,5 +62,5 @@ async def run(app: App, filename: str, secs: float) -> None:
             try:
                 app.scan(image)
             except:
-                print(f"error while scanning {image}")
-        time.sleep(secs)
+                print(f"error while scanning in cron: {image}")
+        time.sleep(mins * 60)

@@ -9,8 +9,14 @@ def encode(message: str) -> str:
     return message.replace(r"-", r"\-").replace(r"_", r"\_").replace(r"*", r"\*")
 
 
+API_URL = "https://api.internal.myteam.mail.ru/bot/v1"
+
+
 class Bot:
     """VK Teams api wrapper"""
+
+    def __init__(self, token: str) -> None:
+        self.token: str = token
 
     def send(self, to, message):
         """Send message to VK teams chat"""
@@ -20,7 +26,9 @@ class Bot:
             "text": message,
             "parseMode": "MarkdownV2",
         }
-        r: requests.Response = requests.get(self.send_text_url, params=params)
+        r: requests.Response = requests.get(
+            f"{API_URL}/messages/sendText", params=params
+        )
         if r.status_code != 200:
             print(f"failed response code from vk teams api: {r.status_code}")
 
