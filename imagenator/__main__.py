@@ -44,7 +44,7 @@ async def scan(image: ImageModel):
     try:
         imagenator.scan(image.url)
     except:
-        logging.error("error while scanning image request: {image.url}")
+        print("error while scanning image request: {image.url}")
 
 
 @api.get("/ping", status_code=status.HTTP_200_OK)
