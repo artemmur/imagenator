@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import os
 
 import uvicorn
@@ -10,6 +11,9 @@ from .bot import Bot
 from .detector import Detector
 from .image import Image
 from .settings import BOT_TOKEN
+
+if os.environ.get("DEBUG", False):
+    logging.basicConfig(level=logging.DEBUG)
 
 
 imagenator: App = App(bot=Bot(token=BOT_TOKEN), image=Image(), detector=Detector())
@@ -29,18 +33,18 @@ async def startup() -> None:
 
 
 @dataclass
-class Image:
+class ImageModel:
     url: str
 
 
 @api.post("/jobs", status_code=status.HTTP_201_CREATED)
-async def scan(image: Image):
+async def scan(image: ImageModel):
     """Webhook for scan OCI image"""
     imagenator.send(f"Start scanning image {image.url}")
     try:
         imagenator.scan(image.url)
     except:
-        print("error while scanning image request: {image.url}")
+        logging.error("error while scanning image request: {image.url}")
 
 
 @api.get("/ping", status_code=status.HTTP_200_OK)
