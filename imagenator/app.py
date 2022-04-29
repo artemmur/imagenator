@@ -1,5 +1,5 @@
 import json
-import time
+import asyncio
 
 from .bot import Bot, encode
 from .detector import Detector, Vulnerability
@@ -63,4 +63,4 @@ async def run(app: App, filename: str, mins: float) -> None:
                 app.scan(image)
             except:
                 print(f"error while scanning in cron: {image}")
-        time.sleep(mins * 60)
+        await asyncio.sleep(mins * 60)

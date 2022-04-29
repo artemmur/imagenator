@@ -2,32 +2,55 @@ import asyncio
 import os
 
 import uvicorn
+from fastapi import FastAPI, status
+from pydantic.dataclasses import dataclass
 
-from . import api, app, imagenator
+from .app import App, run
+from .bot import Bot
+from .detector import Detector
+from .image import Image
+from .settings import BOT_TOKEN
 
 
+imagenator: App = App(bot=Bot(token=BOT_TOKEN), image=Image(), detector=Detector())
+api: FastAPI = FastAPI()
+
+
+@api.on_event("startup")
 async def server() -> None:
     """Initialize server tasks for running on event loop"""
-    tasks: list[asyncio.Task] = [
-        asyncio.create_task(
-            app.run(
-                app=imagenator,
-                filename=os.environ.get("APP_CONF", "config.json"),
-                mins=float(os.environ.get("APP_DURATION", 60)),
-            )
-        ),
-        asyncio.create_task(
-            uvicorn.run(
-                api,
-                host=os.environ.get("APP_HOST", "0.0.0.0"),
-                port=os.environ.get("APP_PORT", 80),
-            )
-        ),
-    ]
-    await asyncio.wait(tasks)
+    asyncio.create_task(
+        run(
+            app=imagenator,
+            filename=os.environ.get("APP_CONF", "config.json"),
+            mins=float(os.environ.get("APP_DURATION", 1)),
+        )
+    )
+
+
+@dataclass
+class Image:
+    url: str
+
+
+@api.post("/jobs", status_code=status.HTTP_201_CREATED)
+async def scan(image: Image):
+    """Webhook for scan OCI image"""
+    imagenator.send(f"Start scanning image {image.url}")
+    try:
+        imagenator.scan(image.url)
+    except:
+        print("error while scanning image request: {image.url}")
+
+
+@api.get("/ping", status_code=status.HTTP_200_OK)
+def healthcheck():
+    return
 
 
 def main():
-    loop: asyncio.AbstractEventLoop = asyncio.get_event_loop()
-    loop.run_until_complete(server())
-    loop.close()
+    uvicorn.run(
+        api,
+        host=os.environ.get("APP_HOST", "0.0.0.0"),
+        port=os.environ.get("APP_PORT", 80),
+    )
