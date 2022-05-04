@@ -1,4 +1,5 @@
 import json
+import logging
 import typing
 
 import requests
@@ -58,3 +59,4 @@ def make_bot(bot_type: str, bot_token: str):
         return TelegramBot(bot_token)
     else:
         raise ValueError(f"Unknown bot type: {bot_type}")
+

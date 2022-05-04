@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import os
 
 import uvicorn
@@ -7,9 +8,13 @@ from pydantic.dataclasses import dataclass
 
 from .app import App, run
 from .bot import make_bot
+from .cache import InMemoryCache
 from .detector import Detector
 from .image import Image
 from .settings import BOT_TOKEN, BOT_TYPE
+
+if os.environ.get("DEBUG", False):
+    logging.basicConfig(level=logging.DEBUG)
 
 
 imagenator: App = App(bot=make_bot(BOT_TYPE, BOT_TOKEN), image=Image(), detector=Detector())
@@ -29,12 +34,12 @@ async def startup() -> None:
 
 
 @dataclass
-class Image:
+class ImageModel:
     url: str
 
 
 @api.post("/jobs", status_code=status.HTTP_201_CREATED)
-async def scan(image: Image):
+async def scan(image: ImageModel):
     """Webhook for scan OCI image"""
     imagenator.send(f"Start scanning image {image.url}")
     try:

@@ -1,7 +1,9 @@
-import json
 import asyncio
+import json
+import logging
 
 from .bot import Bot
+from .cache import Cache
 from .detector import Detector, Vulnerability
 from .image import Image
 from .settings import CHAT_ID
@@ -17,8 +19,9 @@ class ScanException(BaseException):
 
 
 class App:
-    def __init__(self, bot: Bot, image: Image, detector: Detector) -> None:
+    def __init__(self, bot: Bot, cache: Cache, image: Image, detector: Detector) -> None:
         self.bot = bot
+        self.cache = cache
         self.image = image
         self.detector = detector
 
@@ -34,7 +37,7 @@ class App:
             return
 
         vulnerabilities: list[Vulnerability] = self.detector.check(
-            self.image.decompose(image)
+            self.cache.cache(image, self.image.decompose),
         )
 
         if len(vulnerabilities) == 0:
@@ -57,7 +60,7 @@ class App:
 async def run(app: App, filename: str, mins: float) -> None:
     """Start shedule job"""
     while True:
-        print("Start cron scanning")
+        logging.info("Start cron scanning")
 
         data: dict = dict()
         with open(filename, "r") as f:
@@ -67,5 +70,5 @@ async def run(app: App, filename: str, mins: float) -> None:
             try:
                 app.scan(image)
             except:
-                print(f"error while scanning in cron: {image}")
+                logging.error(f"error while scanning in cron: {image}")
         await asyncio.sleep(mins * 60)
